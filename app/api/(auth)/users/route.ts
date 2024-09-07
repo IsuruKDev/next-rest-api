@@ -1,6 +1,9 @@
 import connect from "@/config/db";
 import User from "@/model/user";
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+const ObjectId = Types.ObjectId;
 
 export async function GET() {
 
@@ -28,5 +31,37 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
+}
 
+export async function PATCH(req: NextRequest) {
+
+    try {
+
+        const body = await req.json();
+        const { userId, newUsername } = body
+        await connect();
+
+        if (!userId || !newUsername) {
+            return NextResponse.json({ message: "Invalid Request" }, { status: 400 })
+        }
+
+        if (!ObjectId.isValid(userId)) {
+            return NextResponse.json({ message: "Invalid Data Type" }, { status: 400 })
+        }
+
+        const updateUser = await User.findOneAndUpdate(
+            { _id: new ObjectId(userId) },
+            { username: newUsername },
+            { new: true }
+        )
+
+        return updateUser ? NextResponse.json(
+            { message: `${updateUser.username} is updated successfully.` }
+        ) : NextResponse.json({ message: "Error occure while updating the record" }, { status: 500 })
+
+    } catch (error: any) {
+        return NextResponse.json({ message: `Error occured while updating the user ${error.message}` },
+            { status: 500 }
+        );
+    }
 }
